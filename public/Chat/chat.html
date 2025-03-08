@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="./chat.css" />
+  </head>
+  <body>
+    <header class="header">
+      <div class="logo-container">
+        <button class="menu-button" onclick="toggleSidebar()">☰</button>
+        <div class="logo">H</div>
+        <div class="brand">Humanoid</div>
+      </div>
+      <div class="controls">
+        <button class="control-button" onclick="toggleChat()">💬</button>
+        <button class="control-button voice mic-btn"><span>🎤</span></button>
+        <button class="control-button speaker">🔊</button>
+        <button class="control-button">👤</button>
+      </div>
+    </header>
+
+    <nav class="sidebar">
+      <div class="avatar-list">
+        <div class="avatar-item">
+          <img src="/Chat/images/Bonga.png" alt="Abonga" class="avatar-image" />
+          <span>Abonga</span>
+        </div>
+        <div class="avatar-item">
+          <img src="/Chat/images/Monga.png" alt="Monga" class="avatar-image" />
+          <span>Monga</span>
+        </div>
+      </div>
+
+      <div class="language-selector">
+        <button class="language-button">عربي</button>
+        <button class="language-button active">English</button>
+      </div>
+
+      <button id="upload-btn" class="upload-btn">Upload Video</button>
+
+      <!-- Extraction Options -->
+      <div id="extraction-options">
+        <label for="extract-type">Extraction Type:</label>
+        <select id="extract-type">
+          <option value="numFrames">Number of Frames</option>
+          <option value="percentage">Percentage of Frames</option>
+          <option value="fullFrames">Extract All Frames</option>
+        </select>
+
+        <input type="number" id="extract-value" placeholder="Enter value" />
+      </div>
+
+      <button id="extract-btn" class="extract-btn">Extract Frames</button>
+
+      <!-- Video Generation Options -->
+      <div id="video-options">
+        <label for="frame-rate">Frame Rate (FPS):</label>
+        <input type="number" id="frame-rate" placeholder="Enter frame rate" />
+
+        <label for="duration">Duration (Seconds):</label>
+        <input type="number" id="duration" placeholder="Enter duration" />
+
+        <label for="num-frames">Number of Frames:</label>
+        <input
+          type="number"
+          id="num-frames"
+          placeholder="Enter number of frames"
+        />
+
+        <button id="collect-btn" class="collect-btn">Generate Video</button>
+      </div>
+
+      <div class="sidebar-footer">
+        <button class="control-button">⚙️</button>
+        <button class="control-button">→ Log out</button>
+      </div>
+
+      <aside class="chat-list-container">
+        <button class="new-chat-button">+ New Chat</button>
+        <ul class="chat-list">
+          <!-- Chat items will be dynamically populated here -->
+        </ul>
+      </aside>
+    </nav>
+
+    <main>
+      <img
+        src="/Chat/images/Bonga.png"
+        alt="AI Assistant"
+        class="main-avatar"
+      />
+
+      <div class="chat-container">
+        <div class="chat-input">
+          <input type="text" id="chat-input" placeholder="Start typing....." />
+          <button class="control-button" id="send-button">📤</button>
+        </div>
+      </div>
+    </main>
+
+    <script src="./chatPage.js"></script>
+    <script src="../streaming/stream.js"></script>
+  </body>
+</html>
