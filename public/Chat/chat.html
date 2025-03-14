@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="./chat.css" />
+  </head>
+  <body>
+    <header class="header">
+      <div class="logo-container">
+        <button class="menu-button" onclick="toggleSidebar()">☰</button>
+        <div class="logo">H</div>
+        <div class="brand">Humanoid</div>
+      </div>
+      <div class="controls">
+        <button class="control-button" onclick="toggleChat()">💬</button>
+        <button class="control-button voice mic-btn"><span>🎤</span></button>
+        <button class="control-button speaker">🔊</button>
+        <button class="control-button">👤</button>
+      </div>
+    </header>
+
+    <nav class="sidebar">
+      <div class="avatar-list">
+        <div class="avatar-item">
+          <img src="/Chat/images/Bonga.png" alt="Abonga" class="avatar-image" />
+          <span>Abonga</span>
+        </div>
+        <div class="avatar-item">
+          <img src="/Chat/images/Monga.png" alt="Monga" class="avatar-image" />
+          <span>Monga</span>
+        </div>
+      </div>
+
+      <div class="language-selector">
+        <button class="language-button">عربي</button>
+        <button class="language-button active">English</button>
+      </div>
+
+      <div class="sidebar-footer">
+        <button class="control-button">⚙️</button>
+        <button class="control-button">→ Log out</button>
+      </div>
+
+      <aside class="chat-list-container">
+        <button class="new-chat-button">+ New Chat</button>
+        <ul class="chat-list">
+          <!-- Chat items will be dynamically populated here -->
+        </ul>
+      </aside>
+    </nav>
+
+    <main>
+      <div id="video-container">
+        <canvas id="video-canvas"></canvas>
+        <div id="loading">Loading frames...</div>
+      </div>
+
+      <audio id="audio-player" controls></audio>
+
+      <div id="controls">
+        <button id="play-button">Play</button>
+        <button id="stop-button">Stop</button>
+      </div>
+
+      <div id="status">Status: Connecting to server...</div>
+      <div id="frame-info"></div>
+
+      <div class="chat-container">
+        <div class="chat-input">
+          <input type="text" id="chat-input" placeholder="Start typing....." />
+          <button class="control-button" id="send-button">📤</button>
+        </div>
+      </div>
+    </main>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="./chatPage.js"></script>
+  </body>
+</html>
