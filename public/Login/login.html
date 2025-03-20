@@ -1,62 +1,68 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="./login.css" />
-  </head>
-  <body>
-    <div class="container">
-      <div class="header">
-        <div class="logo">H</div>
-        <div class="brand">Human  oid</div>
-      </div>
-      <div class="login-card">
-        <div class="avatar">
-          <svg
-            width="40"
-            height="40"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="#4a148c"
-            stroke-width="2"
-          >
-            <circle cx="12" cy="8" r="5" />
-            <path d="M3 21v-2a7 7 0 0 1 14 0v2" />
-          </svg>
-        </div>
-        <form>
-          <div class="input-group">
-            <label>Username</label>
-            <input type="text" placeholder="Enter username" />
-          </div>
-          <div class="input-group">
-            <label>Password</label>
-            <div class="password-input">
-              <input type="password" placeholder="Enter password" />
-              <span class="password-toggle">
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                  <circle cx="12" cy="12" r="3" />
-                  <line x1="3" y1="3" x2="21" y2="21" />
-                </svg>
-              </span>
-            </div>
-          </div>
-          <button type="submit" class="login-button">Log in</button>
-          <div class="create-account">
-            Don't have an account?<a href="#">Create one</a>
-          </div>
-        </form>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In</title>
+  <link rel="stylesheet" href="login.css">
+  <script src="login.js"></script>
+</head>
+<body>
+  <div class="signin_page">
+    <div class="navbar">
+      <div class="logo">
+        <a href="/">
+          <img src="./images/Logo.png" alt="Humanoid Logo">
+          <span>Humanoid</span>
+        </a>
       </div>
     </div>
-    <script src="./login.js"></script>
-  </body>
+
+    <div class="login">
+      <img src="./images/profile.png" alt="User Icon" class="user-icon">
+      
+      <form id="loginForm">
+        
+        <!-- Email Input -->
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" 
+                id="email" 
+                name="email" 
+                required 
+                pattern="^[a-zA-Z0-9._%+-]+@gmail\.com$"
+                placeholder="Enter your Gmail (e.g., user@gmail.com)">
+        </div>
+
+        <!-- Password Input -->
+        <div class="form-group">
+          <label for="password">Password</label>
+          <div class="password-wrapper">
+            <input type="password" 
+                  id="password" 
+                  name="password" 
+                  required
+                  placeholder="Enter your password">
+            
+            <button type="button" id="togglePassword" class="eye-button">
+              <img src="./images/eye_closed.png" alt="Eye Icon" id="eyeIcon" class="eye-icon">
+            </button>
+          </div>
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit" id="loginButton">Login</button>
+        <hr>
+      </form>
+
+      <!-- Create Account -->
+      <div class="create-account">
+        <p>
+          Don't have an account? 
+          <a href="/signup" id="signupLink">Create one</a>
+        </p>
+      </div>    
+    </div>
+  </div>
+</body>
 </html>

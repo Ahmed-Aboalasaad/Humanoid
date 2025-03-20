@@ -1,173 +1,127 @@
-* {
+html, body {
+  height: 100%;
   margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
-    Ubuntu, Cantarell, sans-serif;
+  overflow: hidden;
 }
 
-body {
-  background-color: #4a148c;
-  min-height: 100vh;
-  color: white;
-  overflow-x: hidden;
+/*main page*/
+.home_page{
+  background: linear-gradient(to right, #290861, #460b6e);
+  height: 100%;
+  user-select: none;
 }
 
-.nav {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px 40px;
-}
-
-.logo-container {
+/*navbar*/
+.navbar {
   display: flex;
   align-items: center;
-  gap: 12px;
-}
-
-.logo {
-  width: 40px;
-  height: 40px;
-  background-color: #fff;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.brand {
-  font-size: 24px;
-  font-weight: 600;
-}
-
-.nav-buttons {
-  display: flex;
-  gap: 16px;
-  position: relative; /* Ensure no overlapping */
-  z-index: 1; /* Make buttons clickable */
-}
-
-.button {
-  padding: 10px 24px;
-  border-radius: 24px;
-  font-weight: 500;
-  cursor: pointer;
-  border: 2px solid transparent;
-  transition: all 0.3s ease;
-  z-index: 1; /* Ensure buttons are on top of other elements */
-}
-
-.button.outline {
-  border-color: rgba(255, 255, 255, 0.5);
-  background: transparent;
-  color: white;
-}
-
-.button.solid {
-  background-color: white;
-  color: #4a148c;
-}
-
-.button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-}
-
-.main-content {
-  display: flex;
-  padding: 60px 40px;
-  align-items: center;
-  justify-content: space-between;
-  max-width: 1200px;
-  margin: 0 auto;
-  position: relative;
-}
-
-.hero-text {
-  max-width: 500px;
-}
-
-.hero-title {
-  font-size: 48px;
-  font-weight: 700;
-  margin-bottom: 24px;
-  line-height: 1.2;
-}
-
-.hero-subtitle {
-  font-size: 18px;
-  line-height: 1.6;
-  margin-bottom: 32px;
-  opacity: 0.9;
-}
-
-.illustration-container {
-  position: relative;
-  width: 600px;
-  height: 400px;
-}
-
-.platform-circle {
-  position: absolute;
-  bottom: 40px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 120px;
-  height: 120px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-radius: 50%;
-}
-
-.platform-circle::before {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 80%;
-  height: 80%;
-  border: 2px solid rgba(255, 255, 255, 0.5);
-  border-radius: 50%;
-}
-
-.wave-decoration {
-  position: absolute;
+  padding: 10px 20px;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0.1;
-  background: repeating-linear-gradient(
-    45deg,
-    transparent,
-    transparent 10px,
-    rgba(255, 255, 255, 0.1) 10px,
-    rgba(255, 255, 255, 0.1) 20px
-  );
+  z-index: 1000;
+}
+.navbar .logo {
+  display: flex;
+  align-items: center;
+  width: 370px;
+  height: 60px;
+  top: 34px;
+  left: 37px;
+  color: #f5daf4;
+}
+.navbar .logo img {
+  width: 45px;
+  height: 45px;
+  top: 34px;
+  left: 37px;
+  margin-left: 10px;
+  margin-right: 10px;
+}
+.navbar .logo a {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  font-size: 40px;
+  transition: color 0.3s;
+  font-family: Inter;
+  font-weight: 600;
+  line-height: 16px;
+  letter-spacing: 0.5px;
+  text-align: center;
+  color: #F5DAF4;
+}
+.navbar .logo a:hover {
+  opacity: 0.7;
+  cursor: pointer;
+}
+.navbar .auth-links {
+  display: flex;
+  gap: 15px;
+  list-style: none;
+  margin-left: auto;
+  border-radius: 100px;
+  border-width: 2px;
+  gap: 8px;
+}
+.navbar .auth-links button {
+  background: transparent;
+  text-decoration: none;
+  color: white;
+  padding: 8px 20px;
+  border: 2px solid white;
+  border-radius: 5px;
+  transition: background-color 0.3s ease;
+  border-radius: 100px;
+  border-width: 2px;
+  margin-right: 5px;
+  font-size: 1.3rem;
+}
+.navbar .auth-links button:hover {
+  background-color: white;
+  color: black;
+  cursor: pointer;
 }
 
-@media (max-width: 768px) {
-  .main-content {
-    flex-direction: column;
-    text-align: center;
-    padding: 40px 20px;
-  }
-
-  .hero-text {
-    margin-bottom: 40px;
-  }
-
-  .illustration-container {
-    width: 100%;
-    height: 300px;
-  }
-
-  .nav {
-    padding: 20px;
-  }
-
-  .hero-title {
-    font-size: 36px;
-  }
+/*home*/
+.home {
+  color: white;
+  display: flex;
+  padding: 40px 40px;
+}
+.home-content {
+  margin-top: 100px;
+  display: flex;
+  flex-direction: column;
+  margin-left: 70px;
+}
+.home-content h1 {
+  margin-bottom: 20px;
+  font-size: 80px;
+  line-height: 1;
+  letter-spacing: 0.5px;
+  align-items: left;
+}
+.home-content p {
+  font-size: 1.8rem;
+  margin-bottom: 30px;
+  align-items: left;
+  letter-spacing: 5px;
+}
+.home-image{
+  margin-left: 180px;
+}
+.chat-button { 
+  padding: 15px 40px;
+  font-size: 1.7rem;
+  text-decoration: none;
+  width: 25%;
+  transition: background-color 0.3s ease;
+  border-radius: 40px;
+  border: 2px solid white;
+  color: white;
+  margin-left: 190px;
+}
+.chat-button:hover {
+  background-color: white;
+  color: black;
 }

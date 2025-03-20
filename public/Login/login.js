@@ -1,69 +1,94 @@
-// Wait for the DOM to load
 document.addEventListener("DOMContentLoaded", () => {
-  // Select the form and login button
-  const form = document.querySelector("form");
-  const loginButton = document.querySelector(".login-button");
-
-  // Add event listener to handle form submission
-  form.addEventListener("submit", async (event) => {
-    event.preventDefault(); // Prevent default form submission behavior
-
-    // Collect input values
-    const email = form.querySelector("input[type='text']").value; // Assuming username field stores email
-    const password = form.querySelector("input[type='password']").value;
-
-    // Validate input fields (basic validation)
-    if (!email || !password) {
-      alert("Please fill in all fields");
-      return;
-    }
-
-    // Prepare the request payload
-    const payload = {
-      email: email,
-      password: password,
-    };
-
-    try {
-      // Send a POST request to the login endpoint
-      const response = await fetch(
-        "http://localhost:3030/humaniod/user/login",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
+    // Selectors
+    const loginForm = document.getElementById("loginForm") || document.querySelector("form");
+    const emailInput = document.getElementById("email") || loginForm.querySelector("input[type='text']");
+    const passwordInput = document.getElementById("password") || loginForm.querySelector("input[type='password']");
+    const emailError = document.getElementById("emailError");
+    const togglePassword = document.getElementById("togglePassword");
+    const eyeIcon = document.getElementById("eyeIcon");
+    const loginButton = document.getElementById("loginButton") || document.querySelector(".login-button");
+    const createAccountLink = document.querySelector(".create-account a");
+  
+    // ✅ Password Visibility Toggle
+    if (togglePassword && passwordInput && eyeIcon) {
+      togglePassword.addEventListener("click", () => {
+        if (passwordInput.type === "password") {
+          passwordInput.type = "text";
+          eyeIcon.src = "./images/eye_opened.png";
+        } else {
+          passwordInput.type = "password";
+          eyeIcon.src = "./images/eye_closed.png";
         }
-      );
-
-      // Parse the response JSON
-      const data = await response.json();
-
-      // Check the response status
-      if (response.ok) {
-        alert("Login successful!");
-        console.log("Token:", data.token); // Display the token in the console
-        // Store token in localStorage or a cookie for future requests
-        localStorage.setItem("authToken", data.token);
-        // Redirect to another page (e.g., dashboard)
-        window.location.href = "/chat";
-      } else {
-        // Handle errors
-        console.log(data);
-        alert(data.message || "Invalid credentials. Please try again.");
+      });
+    }
+  
+    // ✅ Email Validation (Gmail Only)
+    if (emailInput && emailError) {
+      emailInput.addEventListener("input", () => {
+        if (!emailInput.value.endsWith("@gmail.com")) {
+          emailError.style.display = "block";
+        } else {
+          emailError.style.display = "none";
+        }
+      });
+    }
+  
+    // ✅ Form Submission and Login Handling
+    loginForm.addEventListener("submit", async (event) => {
+      event.preventDefault(); // Prevent default form behavior
+  
+      const email = emailInput.value.trim();
+      const password = passwordInput.value;
+  
+      // Basic Validation
+      if (!email || !password) {
+        alert("Please fill in all required fields.");
+        return;
       }
-    } catch (error) {
-      console.error("Error:", error);
-      alert("Failed to log in. Please try again later.");
+  
+      if (!email.endsWith("@gmail.com")) {
+        alert("Email must be a Gmail address.");
+        return;
+      }
+  
+      // Prepare payload
+      const payload = { email, password };
+      console.log("Login Payload:", payload);
+  
+      // Button feedback
+      if (loginButton) loginButton.textContent = "Logging in...";
+  
+      try {
+        // Send POST request
+        const response = await fetch("http://localhost:3030/humaniod/user/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+  
+        const result = await response.json();
+        console.log("Login Response:", result);
+  
+        if (response.ok && result?.token) {
+          alert("Login successful!");
+          localStorage.setItem("authToken", result.token); // Save token
+          window.location.href = "/chat"; // Redirect to chat page
+        } else {
+          alert(result.message || "Invalid credentials. Please try again.");
+        }
+      } catch (error) {
+        console.error("Login Error:", error);
+        alert("Failed to log in. Please try again later.");
+      } finally {
+        if (loginButton) loginButton.textContent = "Login"; // Reset button text
+      }
+    });
+  
+    // ✅ "Create Account" Link Navigation
+    if (createAccountLink) {
+      createAccountLink.addEventListener("click", (event) => {
+        event.preventDefault(); // Prevent default anchor behavior
+        window.location.href = "/signup"; // Redirect to Sign Up page
+      });
     }
   });
-});
-
-document.addEventListener("DOMContentLoaded", () => {
-  const createAccountLink = document.querySelector(".create-account a");
-  createAccountLink.addEventListener("click", (event) => {
-    event.preventDefault(); // Prevent default link behavior
-    window.location.href = "/signup"; // Redirect to the Sign Up page
-  });
-});

@@ -1,84 +1,70 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="/Sign Up/signup.css" />
-  </head>
-  <body>
-    <div class="container">
-      <div class="header">
-        <div class="logo">H</div>
-        <div class="brand">Humanoid</div>
-      </div>
-      <div class="signup-card">
-        <div class="avatar">
-          <svg
-            width="40"
-            height="40"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="#4a148c"
-            stroke-width="2"
-          >
-            <circle cx="12" cy="8" r="5" />
-            <path d="M3 21v-2a7 7 0 0 1 14 0v2" />
-          </svg>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Signup</title>
+    <link rel="stylesheet" href="/Sign Up/signup.css">
+    <script defer src="/Sign Up/signup.js"></script>
+</head>
+<body>
+
+<div class="signup_page">
+    <div class="navbar">
+        <div class="logo">
+            <a href="/">
+                <img src="./Sign Up/images/Logo.png" alt="Humanoid Logo">
+                <span>Humanoid</span>
+            </a>
         </div>
-        <form>
-          <div class="input-group">
-            <label>Username</label>
-            <input type="text" placeholder="Enter username" />
-          </div>
-          <div class="input-group">
-            <label>Email</label>
-            <input type="email" placeholder="Enter email" />
-          </div>
-          <div class="input-group">
-            <label>Password</label>
-            <div class="password-input">
-              <input type="password" placeholder="Enter password" />
-              <span class="password-toggle see1">
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                  <circle cx="12" cy="12" r="3" />
-                </svg>
-              </span>
-            </div>
-          </div>
-          <div class="input-group">
-            <label>Confirm Password</label>
-            <div class="password-input">
-              <input type="password" placeholder="Confirm password" />
-              <span class="password-toggle">
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                  <circle cx="12" cy="12" r="3" />
-                </svg>
-              </span>
-            </div>
-          </div>
-          <button type="submit" class="signup-button">Sign Up</button>
-          <div class="login-link">
-            Already have an account?<a href="../Login/login.html">Log in</a>
-          </div>
-        </form>
-      </div>
     </div>
-    <script src="/Sign Up/signup.js"></script>
-  </body>
+
+    <div class="create-account">
+        <img src="./Sign Up/images/profile.png" alt="User Icon" class="user-icon">
+
+        <form id="signupForm">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" placeholder="Enter your username" required>
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" placeholder="Enter your Gmail (e.g., user@gmail.com)" required>
+                <p class="error-message" id="emailError"></p> <!-- Error message added -->
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <div class="password-wrapper">
+                    <input type="password" id="password" name="password" placeholder="Enter your password" required>
+                    <button type="button" id="togglePassword" class="eye-button">
+                        <img src="./Sign Up/images/eye_closed.png" alt="Toggle password visibility" class="eye-icon">
+                    </button>
+                </div>
+                <p class="error-message" id="passwordError"></p> <!-- Error message added -->
+            </div>
+
+            <div class="form-group">
+                <label for="confirmPassword">Confirm Password</label>
+                <div class="password-wrapper">
+                    <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Confirm your password" required>
+                    <button type="button" id="toggleConfirmPassword" class="eye-button">
+                        <img src="./Sign Up/images/eye_closed.png" alt="Toggle password visibility" class="eye-icon">
+                    </button>
+                </div>
+                <p class="error-message" id="confirmPasswordError"></p> <!-- Error message added -->
+            </div>
+
+            <button type="submit" id="submitBtn" style="width: 100%;">Create Account</button>
+            <hr>
+
+            <div class="login-redirect">
+                <p>Already have an account? <a href="../Login/login.html" id="loginLink">Login</a></p>
+            </div>
+        </form>
+    </div>
+</div>
+
+</body>
 </html>
