@@ -54,7 +54,7 @@ exports.login = async (req, res) => {
         .json({ message: "Email or password is incorrect" });
     }
 
-    // Create a JWT token
+    // Create a JWT tokenx
     const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, {
       expiresIn: "2h",
     });

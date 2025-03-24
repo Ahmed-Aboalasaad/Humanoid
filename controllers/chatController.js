@@ -15,8 +15,8 @@ exports.startChat = async (userId) => {
 // Function to handle speech input (either text or audio)
 exports.processSpeechOutput = async (req, res) => {
   try {
-    console.log("Request Body:", req.body); // Log body
-    console.log("Request Files:", req.files); // Log files
+    console.log("Request Body:", req.body);
+    console.log("Request Files:", req.files);
 
     let textInput;
     const {
@@ -24,7 +24,7 @@ exports.processSpeechOutput = async (req, res) => {
       lang = "en",
       chatId,
       options = {},
-      character = "Abonga", // Default character
+      character = "Abonga",
     } = req.body;
 
     let voiceId = determineVoiceId(character, lang);
@@ -57,12 +57,46 @@ exports.processSpeechOutput = async (req, res) => {
     // Step 4: Convert LLM response to speech (TTS)
     let audioBase64 = await convertLLMToAudio(llmResponse, voiceId, options);
 
-    // Step 5: Return the LLM response and audio if available
+    // Step 5: Generate new frames by first clearing old frames and then running the generator
+    const fs = require("fs");
+    const path = require("path");
+    const { exec } = require("child_process");
+    const framesDir = path.join(__dirname, "../generator/frames");
+
+    // Clear existing frames
+    console.log("Clearing existing frames...");
+    try {
+      const files = fs.readdirSync(framesDir);
+      for (const file of files) {
+        if (file.endsWith(".png")) {
+          fs.unlinkSync(path.join(framesDir, file));
+        }
+      }
+      console.log("Frames directory cleared successfully");
+    } catch (error) {
+      console.error("Error clearing frames directory:", error);
+    }
+
+    // Run the frame generator script
+    console.log("Starting frame generator script...");
+    exec("node ./generator/generateFrames.js", (error, stdout, stderr) => {
+      if (error) {
+        console.error(`Error executing frame generator: ${error.message}`);
+        return;
+      }
+      if (stderr) {
+        console.error(`Frame generator stderr: ${stderr}`);
+        return;
+      }
+      console.log(`Frame generator output: ${stdout}`);
+    });
+
+    // Step 6: Return the LLM response and audio if available
     if (audioBase64) {
-      console.log("return responce with both text and voice");
+      console.log("Returning response with both text and voice");
       res.json({ textResponce: llmResponse, audio: audioBase64 });
     } else {
-      console.log("return responce only text ");
+      console.log("Returning response with text only");
       res.json({ textResponce: llmResponse });
     }
   } catch (error) {

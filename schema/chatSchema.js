@@ -1,9 +1,6 @@
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
-// TO DO
-// Think of Session Id
-
 const chatSchema = new Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
