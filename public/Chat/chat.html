@@ -6,75 +6,117 @@
     <link rel="stylesheet" href="./chat.css" />
   </head>
   <body>
-    <header class="header">
-      <div class="logo-container">
-        <button class="menu-button" onclick="toggleSidebar()">☰</button>
-        <div class="logo">H</div>
-        <div class="brand">Humanoid</div>
-      </div>
-      <div class="controls">
-        <button class="control-button" onclick="toggleChat()">💬</button>
-        <button class="control-button voice mic-btn"><span>🎤</span></button>
-        <button class="control-button speaker">🔊</button>
-        <button class="control-button">👤</button>
-      </div>
-    </header>
-
-    <nav class="sidebar">
-      <div class="avatar-list">
-        <div class="avatar-item">
-          <img src="/Chat/images/Bonga.png" alt="Abonga" class="avatar-image" />
-          <span>Abonga</span>
-        </div>
-        <div class="avatar-item">
-          <img src="/Chat/images/Monga.png" alt="Monga" class="avatar-image" />
-          <span>Monga</span>
+    <div class="chatbot_page">
+      <!-- Navbar -->
+      <div class="navbar">
+        <div class="logo">
+          <a href="/">
+            <img src="./images/Logo.png" alt="Humanoid Logo" />
+            <span>Humanoid</span>
+          </a>
         </div>
       </div>
 
-      <div class="language-selector">
-        <button class="language-button">عربي</button>
-        <button class="language-button active">English</button>
+      <!-- Menu Button -->
+      <button class="menu-icon" id="menuButton" aria-label="Open Menu">
+        <img src="./images/menu.png" alt="Menu" />
+      </button>
+
+      <div class="chatbot-container">
+        <!-- Animated Character -->
+        <div class="animated-character">
+          <div id="video-container">
+            <canvas id="video-canvas"></canvas>
+            <div id="loading">Loading frames...</div>
+            <audio id="audio-player" controls></audio>
+            <div id="status">Status: Connecting to server...</div>
+            <div id="frame-info"></div>
+          </div>
+        </div>
+
+        <!-- Chat Box -->
+        <div class="chat-container" id="chatContainer">
+          <div class="chat" id="chatBox"></div>
+          <!-- Chat Input -->
+          <div class="chat-input">
+            <input
+              type="text"
+              id="messageInput"
+              placeholder="Start typing....."
+            />
+            <button
+              class="send-button"
+              id="sendButton"
+              aria-label="Send Message"
+            >
+              <img src="./images/send.png" alt="Send" />
+            </button>
+          </div>
+        </div>
+
+        <!-- Sidebar Icons -->
+        <div class="icons">
+          <button
+            class="icon-button"
+            id="profileButton"
+            aria-label="Open profile"
+          >
+            <img src="./images/profile_pic.png" alt="Profile" />
+          </button>
+          <button
+            class="icon-button"
+            id="chatbotToggle"
+            aria-label="Open Messages"
+          >
+            <img id="messageIcon" src="./images/message.png" alt="Message" />
+          </button>
+          <button
+            class="icon-button"
+            id="micButton"
+            aria-label="Activate Microphone"
+          >
+            <img id="micIcon" src="./images/mic_closed.png" alt="Microphone" />
+          </button>
+          <button
+            class="icon-button"
+            id="speakerButton"
+            aria-label="Enable Speaker"
+          >
+            <img id="speakerIcon" src="./images/speaker.png" alt="Speaker" />
+          </button>
+        </div>
       </div>
 
-      <div class="sidebar-footer">
-        <button class="control-button">⚙️</button>
-        <button class="control-button">→ Log out</button>
-      </div>
-
-      <aside class="chat-list-container">
-        <button class="new-chat-button">+ New Chat</button>
-        <ul class="chat-list">
-          <!-- Chat items will be dynamically populated here -->
+      <!-- Sidebar Menu -->
+      <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+          <a id="closeMenu">
+            <span>Humanoid</span>
+            <img src="./images/back.png" alt="Back" class="icon back-icon" />
+          </a>
+        </div>
+        <ul class="character-list">
+          <li data-character="Abonga" class="avatar-item">
+            <img src="./images/bonga.jpg" alt="Bonga" class="profile-img" />
+            Bonga
+          </li>
+          <li data-character="Monga" class="avatar-item">
+            <img src="./images/monga.png" alt="Monga" class="profile-img" />
+            Monga
+          </li>
         </ul>
-      </aside>
-    </nav>
-
-    <main>
-      <div id="video-container">
-        <canvas id="video-canvas"></canvas>
-        <div id="loading">Loading frames...</div>
-      </div>
-
-      <audio id="audio-player" controls></audio>
-
-      <div id="controls">
-        <button id="play-button">Play</button>
-        <button id="stop-button">Stop</button>
-      </div>
-
-      <div id="status">Status: Connecting to server...</div>
-      <div id="frame-info"></div>
-
-      <div class="chat-container">
-        <div class="chat-input">
-          <input type="text" id="chat-input" placeholder="Start typing....." />
-          <button class="control-button" id="send-button">📤</button>
+        <aside class="chat-list-container">
+          <button id="newChatButton" class="new-chat-btn">New Chat</button>
+          <ul class="chat-list"></ul>
+        </aside>
+        <div class="language-selector">
+          <button class="inactive" id="arButton">عربي</button>
+          <button class="active" id="enButton">English</button>
         </div>
       </div>
-    </main>
+    </div>
 
-    <script src="/socket.io/socket.io.js"></script>
     <script src="./chatPage.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
   </body>
 </html>
