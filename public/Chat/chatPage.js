@@ -1,23 +1,28 @@
-const token = getCookie("authToken");
+document.addEventListener("DOMContentLoaded", function () {
+  const chatbotToggle = document.getElementById("chatbotToggle");
+  const chatContainer = document.getElementById("chatContainer");
+  const menuButton = document.getElementById("menuButton");
+  const sidebar = document.getElementById("sidebar");
+  const closeMenu = document.getElementById("closeMenu");
+  const speakerButton = document.getElementById("speakerButton");
+  const speakerIcon = document.getElementById("speakerIcon");
+  const profileButton = document.getElementById("profileButton");
+  const profilePopup = document.getElementById("profilePopup");
+  const characterImage = document.getElementById("characterImage");
+  const messageIcon = document.getElementById("messageIcon");
+  const animatedCharacter = document.querySelector(".animated-character");
+  const chatInput = document.querySelector(".chat-input input");
+  const sendButton = document.querySelector(".chat-input button");
+  const chatList = document.querySelector(".chat-list");
+  const newChatButton = document.querySelector(".new-chat-btn");
+  const chat = document.querySelector(".chat");
 
-document.addEventListener("DOMContentLoaded", () => {
-  // DOM Elements
+  const audioPlayer = document.getElementById("audio-player");
   const canvas = document.getElementById("video-canvas");
   const ctx = canvas.getContext("2d");
-  const audioPlayer = document.getElementById("audio-player");
-  const playButton = document.getElementById("play-button");
-  const stopButton = document.getElementById("stop-button");
   const statusElement = document.getElementById("status");
-  const frameInfoElement = document.getElementById("frame-info");
   const loadingElement = document.getElementById("loading");
-  const chatInput = document.querySelector(".chat-input input");
-  const micButton = document.querySelector(".mic-btn");
-  const sendButton = document.querySelector(".chat-input button");
-  const chatContainer = document.querySelector(".chat-container");
-  const chatList = document.querySelector(".chat-list");
-  const newChatButton = document.querySelector(".new-chat-button");
-  const avatarList = document.querySelectorAll(".avatar-item");
-  const languageButtons = document.querySelectorAll(".language-button");
+  const frameInfoElement = document.getElementById("frame-info");
 
   // Set fixed canvas dimensions
   canvas.width = 500;
@@ -25,10 +30,11 @@ document.addEventListener("DOMContentLoaded", () => {
   canvas.style.display = "block";
   canvas.style.margin = "0 auto";
 
-  // Socket.io connection
-  const socket = io();
-
   // Variables
+  let isSpeakerOn = true;
+  let isChatHidden = false;
+  let isChatVisible = true;
+  let isCharacterCentered = false;
   let mediaRecorder = null;
   let chunks = [];
   let audioBlob = null;
@@ -38,6 +44,9 @@ document.addEventListener("DOMContentLoaded", () => {
   let voiceId = "21m00Tcm4TlvDq8ikWAM";
   let options = {};
   let currentChatId = null;
+
+  // Socket.io connection
+  const socket = io();
 
   // Frame and playback variables
   let allFrames = {};
@@ -52,15 +61,23 @@ document.addEventListener("DOMContentLoaded", () => {
   let pendingAudioData = null;
 
   // Buffer settings
-  const BUFFER_THRESHOLD = 90; // Number of frames to buffer before starting playback
-  const BUFFER_MIN_THRESHOLD = 20; // Minimum buffer size before pausing
+  const BUFFER_THRESHOLD = 200; // Number of frames to buffer before starting playback
+  const BUFFER_MIN_THRESHOLD = 10; // Minimum buffer size before pausing
 
-  // Socket events for frames
+  console.log("Token:", token);
+  const urlPath = window.location.pathname;
+  const chatIdFromURL = urlPath.split("/").pop();
+  if (chatIdFromURL) {
+    currentChatId = chatIdFromURL;
+    loadChat(currentChatId);
+  }
+
   socket.on("connect", () => {
     statusElement.textContent = "Status: Connected to server";
   });
 
   socket.on("video-info", (info) => {
+    console.log("Successfull in Socket video-info");
     totalFrames = info.totalFrames;
     fps = info.fps;
     statusElement.textContent = `Status: Waiting for frames (0/${BUFFER_THRESHOLD})`;
@@ -115,71 +132,239 @@ document.addEventListener("DOMContentLoaded", () => {
     statusElement.textContent = `Error: ${error.message}`;
   });
 
-  // Playback controls
-  function startPlayback() {
-    console.log("startPlayback called");
+  chatbotToggle.addEventListener("click", function () {
+    isChatHidden = !isChatHidden;
+    chatContainer.style.display = isChatHidden ? "none" : "block";
+  });
 
-    if (!audioPlayer.src || audioPlayer.src === "") {
-      console.error("No audio loaded.");
-      return;
-    }
+  menuButton.addEventListener("click", function () {
+    sidebar.classList.add("open");
+    menuButton.style.display = "none";
+    // chatContainer.style.display = "none";
+    animatedCharacter.classList.add("expanded-menu");
+  });
 
-    if (audioPlayer.readyState < 2) {
-      // Wait until audio is fully loaded
-      console.warn("Audio not ready yet, waiting...");
-      audioPlayer.addEventListener("canplaythrough", startPlayback, {
-        once: true,
-      });
-      return;
-    }
+  closeMenu.addEventListener("click", function () {
+    sidebar.classList.remove("open");
+    menuButton.style.display = "block";
+    chatContainer.style.display = "flex";
+    animatedCharacter.classList.remove("expanded-menu");
+  });
 
-    // Reset state
-    isPlaying = true;
-    renderLoopActive = false;
-    lastDisplayedFrameIndex = -1;
-    audioPlayer.currentTime = 0;
-
-    console.log("Starting audio playback, isPlaying =", isPlaying);
-    audioPlayer
-      .play()
-      .catch((error) => console.error("Error playing audio:", error));
-
-    // Start the rendering loop only if not already active
-    if (!renderLoopActive) {
-      console.log("Starting render loop");
-      renderLoopActive = true;
-      renderFrame();
-    }
-  }
-
-  function stopPlayback() {
-    console.log("stopPlayback called");
-    isPlaying = false;
-    renderLoopActive = false;
-    audioPlayer.pause();
-    audioPlayer.currentTime = 0;
-    statusElement.textContent = "Status: Stopped";
-    console.log(
-      "Playback stopped, isPlaying =",
-      isPlaying,
-      "renderLoopActive =",
-      renderLoopActive
-    );
-  }
-
-  // UI Button Events
-  playButton.addEventListener("click", () => {
-    console.log("Play button clicked, isPlaying =", isPlaying);
-    if (!isPlaying) {
-      startPlayback();
+  messageIcon.addEventListener("click", function () {
+    isChatVisible = !isChatVisible;
+    chatContainer.style.display = isChatVisible ? "block" : "none";
+    messageIcon.src = isChatVisible
+      ? "./images/message.png"
+      : "./images/message_closed.png";
+    isCharacterCentered = !isCharacterCentered;
+    if (isCharacterCentered) {
+      characterImage.classList.add("expanded-message");
     } else {
-      audioPlayer.play();
+      characterImage.classList.remove("expanded-message");
     }
   });
 
-  stopButton.addEventListener("click", () => {
-    stopPlayback();
+  speakerButton.addEventListener("click", function () {
+    isSpeakerOn = !isSpeakerOn;
+    speakerIcon.src = isSpeakerOn
+      ? "./images/speaker.png"
+      : "./images/speaker_closed.png";
+
+    audioPlayer.muted = !isSpeakerOn;
   });
+
+  document.getElementById("arButton").addEventListener("click", function () {
+    selectedLanguage = "ar";
+    document.getElementById("arButton").classList.add("active");
+    document.getElementById("enButton").classList.remove("active");
+    document.getElementById("enButton").classList.add("inactive");
+  });
+
+  document.getElementById("enButton").addEventListener("click", function () {
+    selectedLanguage = "en";
+    document.getElementById("enButton").classList.add("active");
+    document.getElementById("arButton").classList.remove("active");
+    document.getElementById("arButton").classList.add("inactive");
+  });
+
+  document.querySelectorAll(".character-list li").forEach((item) => {
+    item.addEventListener("click", function () {
+      character = this.getAttribute("data-character");
+      characterImage.src =
+        character === "Abonga" ? "./images/bonga.jpg" : "./images/monga.png";
+    });
+  });
+
+  function displayMessage(
+    sender,
+    messageContent,
+    error = false,
+    retryCallback = null
+  ) {
+    const messageWrapper = document.createElement("div");
+    messageWrapper.classList.add("chat-content");
+    const isUser = sender === "You";
+    const senderName = isUser ? "You" : character;
+
+    const messageElement = document.createElement("div");
+    messageElement.classList.add("chat-message", isUser ? "user" : "bot");
+
+    if (error) {
+      messageElement.innerHTML = `
+              <span class="error-message">Error sending message</span>
+              <button class="retry-button">Try Again</button>
+          `;
+      const retryButton = messageElement.querySelector(".retry-button");
+      retryButton.addEventListener("click", () => {
+        retryButton.style.display = "none";
+        if (retryCallback) {
+          retryCallback(messageElement, retryButton);
+        }
+      });
+    } else {
+      messageElement.textContent = messageContent;
+    }
+    const nameElement = document.createElement("span");
+    nameElement.classList.add("name", isUser ? "user" : "bot");
+    nameElement.textContent = senderName;
+
+    messageWrapper.appendChild(nameElement);
+    messageWrapper.appendChild(messageElement);
+
+    chat.appendChild(messageWrapper);
+    chat.scrollTop = chat.scrollHeight;
+  }
+
+  sendButton.addEventListener("click", () => {
+    const inputText = chatInput.value.trim();
+    if (!inputText) return;
+
+    displayMessage("You", inputText);
+    sendMessage(inputText);
+    chatInput.value = "";
+  });
+
+  chatInput.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      sendButton.click();
+    }
+  });
+
+  function clearCurrentChat() {
+    Array.from(chat.children).forEach((child) => {
+      if (!child.classList.contains("chat-input")) {
+        chat.removeChild(child);
+      }
+    });
+  }
+
+  newChatButton.addEventListener("click", async () => {
+    try {
+      const response = await fetch("/humaniod/chat/new", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!response.ok) {
+        throw new Error("Failed to create new chat");
+      }
+      const newChat = await response.json();
+      currentChatId = newChat._id;
+      window.history.pushState({}, "", `/chat/${currentChatId}`);
+      clearCurrentChat();
+    } catch (error) {
+      console.error("Error creating new chat:", error);
+    }
+  });
+
+  async function startRecording() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorder = new MediaRecorder(stream);
+      chunks = [];
+      mediaRecorder.start();
+      isRecording = true;
+      micButton.innerHTML = '<img src="./images/mic.png" alt="Mic Icon">';
+      mediaRecorder.ondataavailable = (event) => chunks.push(event.data);
+      mediaRecorder.onstop = async () => {
+        audioBlob = new Blob(chunks, { type: "audio/wav" });
+
+        const formData = new FormData();
+        formData.append("file", audioBlob, "recording.wav");
+
+        try {
+          const response = await fetch("http://127.0.0.1:5000/transcribe", {
+            method: "POST",
+            body: formData,
+          });
+
+          const result = await response.json();
+
+          if (result.transcription) {
+            displayMessage("You", result.transcription);
+            sendMessage(result.transcription);
+          } else {
+            displayMessage("System", "Transcription failed. Please try again.");
+          }
+        } catch (error) {
+          console.error("Error during transcription:", error);
+          displayMessage("System", "Error: Unable to connect to server.");
+        }
+      };
+    } catch (err) {
+      alert("Could not access your microphone. Please check your settings.");
+      console.error(err);
+    }
+  }
+
+  function stopRecording() {
+    if (isRecording) {
+      mediaRecorder.stop();
+      isRecording = false;
+      micButton.innerHTML =
+        '<img src="./images/mic_closed.png" alt="Mic Icon">';
+    }
+  }
+
+  micButton.addEventListener("click", async () => {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      alert("Microphone access is not supported in your browser.");
+      return;
+    }
+    if (isRecording) {
+      stopRecording();
+    } else {
+      await startRecording();
+    }
+  });
+
+  async function loadChat(chatId) {
+    try {
+      currentChatId = chatId;
+      window.history.pushState({}, "", `/chat/${chatId}`);
+
+      const response = await fetch(`/humaniod/chat/${chatId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to load chat");
+      }
+
+      const chat = await response.json();
+      clearCurrentChat();
+
+      chat.messages.forEach((message) => {
+        displayMessage("You", message.requestText);
+
+        if (message.responseText) {
+          displayMessage(character, message.responseText);
+        }
+      });
+    } catch (error) {
+      console.error("Error loading chat:", error);
+    }
+  }
 
   // The core synchronization function with buffer management
   function renderFrame() {
@@ -359,55 +544,113 @@ document.addEventListener("DOMContentLoaded", () => {
   // Initial setup of audio listeners
   setupAudioListeners();
 
-  // Function to display a message in the chat
-  function displayMessage(
-    sender,
-    messageContent,
-    error = false,
-    retryCallback = null
-  ) {
-    const messageElement = document.createElement("div");
-    messageElement.classList.add("message");
+  function startPlayback() {
+    console.log("startPlayback called");
 
-    if (sender === "You") {
-      messageElement.classList.add("sent");
+    if (!audioPlayer.src || audioPlayer.src === "") {
+      console.error("No audio loaded.");
+      return;
     }
 
-    if (error) {
-      const retryMessage = document.createElement("span");
-      retryMessage.textContent = "Try Again";
-      retryMessage.classList.add("retry-message");
-
-      // Make the retry message clickable
-      retryMessage.addEventListener("click", () => {
-        // Hide the retry button temporarily
-        retryMessage.style.display = "none";
-
-        // Execute the retry callback
-        if (retryCallback) {
-          retryCallback(messageElement, retryMessage);
-        }
+    if (audioPlayer.readyState < 2) {
+      // Wait until audio is fully loaded
+      console.warn("Audio not ready yet, waiting...");
+      audioPlayer.addEventListener("canplaythrough", startPlayback, {
+        once: true,
       });
-
-      messageElement.appendChild(retryMessage);
-    } else {
-      messageElement.innerHTML = `
-        <div>${sender}</div>
-        <div class="message-content">${messageContent}</div>
-      `;
+      return;
     }
 
-    chatContainer.insertBefore(messageElement, chatInput.parentElement);
-    chatContainer.scrollTop = chatContainer.scrollHeight; // Auto-scroll to the bottom
+    // Reset state
+    isPlaying = true;
+    renderLoopActive = false;
+    lastDisplayedFrameIndex = -1;
+    audioPlayer.currentTime = 0;
+
+    console.log("Starting audio playback, isPlaying =", isPlaying);
+    audioPlayer
+      .play()
+      .catch((error) => console.error("Error playing audio:", error));
+
+    // Start the rendering loop only if not already active
+    if (!renderLoopActive) {
+      console.log("Starting render loop");
+      renderLoopActive = true;
+      renderFrame();
+    }
   }
 
-  // Function to clear current chat messages
-  function clearCurrentChat() {
-    Array.from(chatContainer.children).forEach((child) => {
-      if (!child.classList.contains("chat-input")) {
-        chatContainer.removeChild(child);
+  function stopPlayback() {
+    console.log("stopPlayback called");
+    isPlaying = false;
+    renderLoopActive = false;
+    audioPlayer.pause();
+    audioPlayer.currentTime = 0;
+    statusElement.textContent = "Status: Stopped";
+    console.log(
+      "Playback stopped, isPlaying =",
+      isPlaying,
+      "renderLoopActive =",
+      renderLoopActive
+    );
+  }
+
+  // Function to play audio with buffer management
+  function playAudio(base64Audio) {
+    console.log("playAudio called with new audio data");
+
+    if (!base64Audio) {
+      console.error("No audio data received.");
+      return;
+    }
+
+    try {
+      // Stop any existing playback
+      stopPlayback();
+
+      // Convert Base64 to Blob URL
+      const binaryString = atob(base64Audio);
+      const len = binaryString.length;
+      const bytes = new Uint8Array(len);
+
+      for (let i = 0; i < len; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
       }
-    });
+
+      const blob = new Blob([bytes], { type: "audio/mpeg" });
+      const audioUrl = URL.createObjectURL(blob);
+
+      // Set new audio source
+      audioPlayer.src = audioUrl;
+      audioPlayer.load(); // Ensure audio is preloaded
+
+      console.log("Audio URL set:", audioUrl);
+
+      audioPlayer.oncanplaythrough = () => {
+        console.log("Audio loaded successfully. Playing...");
+
+        // Only start playback if we have enough frames buffered
+        if (frameBuffer.length >= BUFFER_THRESHOLD) {
+          // Set playback state
+          isPlaying = true;
+          renderLoopActive = true;
+
+          // Start audio playback
+          audioPlayer
+            .play()
+            .catch((error) => console.error("Error playing audio:", error));
+
+          statusElement.textContent = "Status: Playing";
+
+          // Start the render loop
+          renderFrame();
+        } else {
+          statusElement.textContent = `Status: Waiting for frames (${frameBuffer.length}/${BUFFER_THRESHOLD})`;
+        }
+      };
+    } catch (error) {
+      console.error("Error processing Base64 audio:", error);
+    }
   }
 
   // Function to send a message to the endpoint
@@ -426,14 +669,10 @@ document.addEventListener("DOMContentLoaded", () => {
         const newChat = await response.json();
         currentChatId = newChat._id;
         window.history.pushState({}, "", `/chat/${currentChatId}`);
-        fetchChatList();
       }
 
       // Join the socket.io room for this chat
       socket.emit("join_chat", currentChatId);
-
-      // Display user message immediately
-      displayMessage("You", inputText);
 
       const response = await fetch("/humaniod/chat/sendmessage", {
         method: "POST",
@@ -500,10 +739,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Function to handle sending the message again when the "Try Again" button is clicked
   async function sendMessageWithRetry(inputText, messageElement, retryMessage) {
     try {
-      // Retry sending the message
       const response = await fetch("/humaniod/chat/sendmessage", {
         method: "POST",
         headers: {
@@ -525,318 +762,22 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       const data = await response.json();
-
-      // Replace the "Try Again" with the response content
       messageElement.innerHTML = `
-        <div>${character}</div>
-        <div class="message-content">${data.textResponce}</div>
-      `;
-
-      if (data.audio) {
-        pendingAudioData = data.audio;
-
-        if (frameBuffer.length >= BUFFER_THRESHOLD) {
-          playAudio(data.audio);
-          pendingAudioData = null;
-        }
-      }
+      <div>${character}</div>
+      <div class="message-content">${data.textResponce}</div>
+    `;
+      if (data.audio) playAudio(data.audio);
     } catch (error) {
-      // If the retry fails again, make the "Try Again" button reappear
       console.error("Retry failed:", error);
-      retryMessage.style.display = "inline"; // Re-show the "Try Again" message
+      retryMessage.style.display = "inline";
     }
   }
-
-  // Function to play audio with buffer management
-  function playAudio(base64Audio) {
-    console.log("playAudio called with new audio data");
-
-    if (!base64Audio) {
-      console.error("No audio data received.");
-      return;
-    }
-
-    try {
-      // Stop any existing playback
-      stopPlayback();
-
-      // Convert Base64 to Blob URL
-      const binaryString = atob(base64Audio);
-      const len = binaryString.length;
-      const bytes = new Uint8Array(len);
-
-      for (let i = 0; i < len; i++) {
-        bytes[i] = binaryString.charCodeAt(i);
-      }
-
-      const blob = new Blob([bytes], { type: "audio/mpeg" });
-      const audioUrl = URL.createObjectURL(blob);
-
-      // Set new audio source
-      audioPlayer.src = audioUrl;
-      audioPlayer.load(); // Ensure audio is preloaded
-
-      console.log("Audio URL set:", audioUrl);
-
-      audioPlayer.oncanplaythrough = () => {
-        console.log("Audio loaded successfully. Playing...");
-
-        // Only start playback if we have enough frames buffered
-        if (frameBuffer.length >= BUFFER_THRESHOLD) {
-          // Set playback state
-          isPlaying = true;
-          renderLoopActive = true;
-
-          // Start audio playback
-          audioPlayer
-            .play()
-            .catch((error) => console.error("Error playing audio:", error));
-
-          statusElement.textContent = "Status: Playing";
-
-          // Start the render loop
-          renderFrame();
-        } else {
-          statusElement.textContent = `Status: Waiting for frames (${frameBuffer.length}/${BUFFER_THRESHOLD})`;
-        }
-      };
-    } catch (error) {
-      console.error("Error processing Base64 audio:", error);
-    }
-  }
-
-  // Fetch chat list and populate
-  async function fetchChatList() {
-    try {
-      const response = await fetch("/humaniod/chat/list", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch chat list");
-      }
-
-      const chats = await response.json();
-      chatList.innerHTML = "";
-
-      chats.forEach((chat) => {
-        const listItem = document.createElement("li");
-        listItem.textContent = chat.title || `Chat ${chat._id}`;
-        listItem.dataset.chatId = chat._id;
-        listItem.addEventListener("click", () => loadChat(chat._id));
-        chatList.appendChild(listItem);
-      });
-    } catch (error) {
-      console.error("Error fetching chat list:", error);
-    }
-  }
-
-  // Load chat history
-  async function loadChat(chatId) {
-    try {
-      currentChatId = chatId;
-      window.history.pushState({}, "", `/chat/${chatId}`);
-
-      const response = await fetch(`/humaniod/chat/${chatId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to load chat");
-      }
-
-      const chat = await response.json();
-      clearCurrentChat();
-
-      chat.messages.forEach((message) => {
-        // Display the request text (user message)
-        displayMessage("You", message.requestText);
-
-        // Display the response text (bot's reply)
-        if (message.responseText) {
-          displayMessage(character, message.responseText);
-        }
-      });
-    } catch (error) {
-      console.error("Error loading chat:", error);
-    }
-  }
-
-  // Create a new chat
-  newChatButton.addEventListener("click", async () => {
-    try {
-      const response = await fetch("/humaniod/chat/new", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to create new chat");
-      }
-
-      const newChat = await response.json();
-      currentChatId = newChat._id;
-      window.history.pushState({}, "", `/chat/${currentChatId}`);
-      clearCurrentChat();
-      fetchChatList();
-    } catch (error) {
-      console.error("Error creating new chat:", error);
-    }
-  });
-
-  // Initialize chat based on URL
-  const urlPath = window.location.pathname;
-  const chatIdFromURL = urlPath.split("/").pop();
-  if (chatIdFromURL) {
-    currentChatId = chatIdFromURL;
-    loadChat(currentChatId);
-  } else {
-    fetchChatList();
-  }
-
-  async function startRecording() {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaRecorder = new MediaRecorder(stream);
-      chunks = [];
-      mediaRecorder.start();
-      isRecording = true;
-      micButton.innerHTML = "⏹️"; // Indicate recording is in progress
-
-      mediaRecorder.ondataavailable = (event) => chunks.push(event.data);
-
-      mediaRecorder.onstop = async () => {
-        audioBlob = new Blob(chunks, { type: "audio/wav" });
-
-        // Send the audioBlob to your ASR API
-        const formData = new FormData();
-        formData.append("file", audioBlob, "recording.wav");
-
-        try {
-          const response = await fetch("http://127.0.0.1:5000/transcribe", {
-            method: "POST",
-            body: formData,
-          });
-
-          const result = await response.json();
-
-          if (result.transcription) {
-            displayMessage("You", result.transcription);
-            sendMessage(result.transcription);
-          } else {
-            displayMessage("System", "Transcription failed. Please try again.");
-          }
-        } catch (error) {
-          console.error("Error during transcription:", error);
-          displayMessage("System", "Error: Unable to connect to server.");
-        }
-      };
-    } catch (err) {
-      alert("Could not access your microphone. Please check your settings.");
-      console.error(err);
-    }
-  }
-
-  function stopRecording() {
-    if (isRecording) {
-      mediaRecorder.stop();
-      isRecording = false;
-      micButton.innerHTML = "🎤"; // Reset button icon
-    }
-  }
-
-  // Add event listeners for the microphone button
-  micButton.addEventListener("click", async () => {
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      alert("Microphone access is not supported in your browser.");
-      return;
-    }
-
-    if (isRecording) {
-      stopRecording();
-    } else {
-      await startRecording();
-    }
-  });
-
-  // Event listener for send button
-  sendButton.addEventListener("click", () => {
-    const inputText = chatInput.value.trim();
-    if (!inputText) return;
-
-    displayMessage("You", inputText);
-    sendMessage(inputText);
-    chatInput.value = "";
-  });
-
-  // Enable sending messages with Enter key
-  chatInput.addEventListener("keydown", (event) => {
-    if (event.key === "Enter") {
-      sendButton.click();
-    }
-  });
-
-  // Avatar selection
-  avatarList.forEach((avatar) => {
-    avatar.addEventListener("click", () => {
-      character = avatar.querySelector("span").textContent;
-      avatarList.forEach((a) => a.classList.remove("selected"));
-      avatar.classList.add("selected");
-
-      // Replace the main avatar's image
-      const mainAvatar = document.querySelector(".main-avatar");
-      const selectedAvatarSrc = avatar.querySelector("img").getAttribute("src");
-      mainAvatar.setAttribute("src", selectedAvatarSrc);
-
-      console.log(character);
-    });
-  });
-
-  // Language selection
-  languageButtons.forEach((button) => {
-    button.addEventListener("click", () => {
-      lang = button.textContent === "عربي" ? "ar" : "en";
-      languageButtons.forEach((btn) => btn.classList.remove("active"));
-      button.classList.add("active");
-    });
-  });
 });
 
-// ###########################################################################################
-// ###########################################################################################
-// ###########################################################################################
-
-function toggleSidebar() {
-  const sidebar = document.querySelector(".sidebar");
-  const menuButton = document.querySelector(".menu-button");
-  sidebar.classList.toggle("active");
-
-  // Temporarily disable the button to prevent rapid toggling
-  menuButton.disabled = true;
-  setTimeout(() => {
-    menuButton.disabled = false;
-  }, 300); // Matches the sidebar transition time
-}
-
-function toggleChat() {
-  document.querySelector(".chat-container").classList.toggle("hidden");
-}
-
-// Function to extract a specific cookie by name
+const token = getCookie("authToken");
 function getCookie(name) {
   const value = `; ${document.cookie}`;
   const parts = value.split(`; ${name}=`);
   if (parts.length === 2) return parts.pop().split(";").shift();
   return null;
-}
-
-function clearCurrentChat() {
-  const chatContainer = document.querySelector(".chat-container");
-
-  // Remove all elements except the chat-input
-  Array.from(chatContainer.children).forEach((child) => {
-    if (!child.classList.contains("chat-input")) {
-      chatContainer.removeChild(child);
-    }
-  });
 }
