@@ -45,6 +45,8 @@ fs.ensureDirSync(VIDEO_FOLDER);
 // Define frames directory for monitoring
 const FRAMES_DIR = path.join(__dirname, "./generator/frames");
 fs.ensureDirSync(FRAMES_DIR); // Ensure frames directory exists
+console.log("Watching frames at:", FRAMES_DIR);
+
 
 app.use(cookieParser());
 app.use(express.json());
@@ -70,71 +72,115 @@ app.use((req, res) => {
 
 // Initialize frame monitoring
 let activeFrameWatchers = new Map(); // Map of chatId -> watcher
-const FPS = 30; // Frames per second
+const FPS = 25; // Frames per second
+
+
+
+
+
 
 // Function to start watching frames directory for a specific chat
 function startFrameWatcher(chatId, socket) {
-  // Stop any existing watcher for this chat
+  let lastFrameTime = null;
+let endSignalSent = false;
+let hasStartedReceivingFrames = false;
+
   stopFrameWatcher(chatId);
-
-  console.log(`Starting frame watcher for chat: ${chatId}`);
-
-  // Create watcher for the frames directory
-  const watcher = chokidar.watch(FRAMES_DIR, {
-    ignored: /(^|[\/\\])\../, // ignore dotfiles
-    persistent: true,
-    awaitWriteFinish: {
-      stabilityThreshold: 500,
-      pollInterval: 100,
-    },
+  console.log(`[Watcher] Initial scan of ${FRAMES_DIR}:`);
+  fs.readdir(FRAMES_DIR, (err, files) => {
+    if (err) {
+      console.error("[Watcher] Error reading directory:", err);
+    } else {
+      console.log(`[Watcher] Found ${files.length} files:`, files.slice(0, 10));
+    }
   });
 
-  // Store frames in order
-  let frames = [];
+  const watcher = chokidar.watch(FRAMES_DIR, {
+    ignored: /(^|[\/\\])\../,
+    persistent: true,
+    ignoreInitial: false,
+    awaitWriteFinish: {
+      stabilityThreshold: 100,  // Wait 100ms after last change
+      pollInterval: 100         // Check every 100ms
+    },
+    usePolling: true,           // Force polling (more reliable but higher CPU)
+    interval: 100               // Polling interval
+  });
 
-  // Watch for new or changed PNG files
-  watcher.on("add", (path) => {
-    if (path.endsWith(".png")) {
-      console.log(`New frame detected: ${path}`);
+  watcher.on("add", (filePath) => {
 
-      // Read the frame and send it to the client
-      fs.readFile(path, (err, data) => {
+    if (!filePath.endsWith(".png")) return;
+
+// Mark first frame reception
+if (!hasStartedReceivingFrames) {
+  hasStartedReceivingFrames = true;
+  lastFrameTime = Date.now();
+  endSignalSent = false;
+
+  // Start 1s check loop ONLY after first frame
+  setInterval(() => {
+    const now = Date.now();
+    if (
+      hasStartedReceivingFrames &&
+      now - lastFrameTime > 1000 &&
+      !endSignalSent
+    ) {
+      console.log("[Watcher] No frames detected for 1 second. Emitting 'done'.");
+      socket.emit("done");
+      endSignalSent = true;
+    }
+  }, 500);
+} else {
+  lastFrameTime = Date.now();
+  endSignalSent = false;
+}
+
+
+
+
+    console.log(`[Watcher] File event detected: ${filePath}`);
+    if (filePath.endsWith(".png")) {
+  
+      fs.readFile(filePath, (err, data) => {
         if (err) {
-          console.error(`Error reading frame: ${err}`);
-          return;
+          return console.error("[Watcher] Read error:", err);
         }
-
-        const frameIndex = parseInt(path.match(/\d+/)[0], 10);
-        const base64Frame = data.toString("base64");
-
-        // Add to frames array in the correct position
-        frames[frameIndex] = {
-          index: frameIndex,
-          data: `data:image/png;base64,${base64Frame}`,
-          timestamp: (frameIndex * 1000) / FPS,
-        };
-
-        // Send the frame to the client
+  
+        const match = filePath.match(/(\d+)/);
+        if (!match) return;
+  
+        const index = parseInt(match[0], 10);
+        const base64 = data.toString("base64");
+  
         socket.emit("frame", {
-          index: frameIndex,
-          data: `data:image/png;base64,${base64Frame}`,
-          timestamp: (frameIndex * 1000) / FPS,
+          index,
+          data: `data:image/png;base64,${base64}`,
+          timestamp: (index * 1000) / FPS,
+        });
+  
+        console.log(`[Watcher] Sent frame ${index} to client ${socket.id}`);
+  
+        // 🚨 Delete the frame after sending
+        fs.unlink(filePath, (unlinkErr) => {
+          if (unlinkErr) {
+            console.error(`[Watcher] Failed to delete ${filePath}:`, unlinkErr);
+          } else {
+            console.log(`[Watcher] Deleted ${filePath}`);
+          }
         });
       });
     }
   });
+  
 
-  // Store the watcher in the map
   activeFrameWatchers.set(chatId, watcher);
-
-  return watcher;
 }
 
 // Function to stop watching frames directory for a specific chat
 function stopFrameWatcher(chatId) {
   const watcher = activeFrameWatchers.get(chatId);
   if (watcher) {
-    console.log(`Stopping frame watcher for chat: ${chatId}`);
+    console.log(`[Watcher] Stopping watcher for chat: ${chatId}`);
     watcher.close();
     activeFrameWatchers.delete(chatId);
   }
@@ -142,44 +188,28 @@ function stopFrameWatcher(chatId) {
 
 // Socket.IO connection handling
 io.on("connection", (socket) => {
-  console.log("Client connected:", socket.id);
+  console.log(`[Socket.IO] Client connected: ${socket.id}`);
 
-  // Handle client joining a chat room
   socket.on("join_chat", (chatId) => {
-    console.log(`Client ${socket.id} joined chat: ${chatId}`);
+    console.log(`[Socket.IO] ${socket.id} joined chat: ${chatId}`);
     socket.join(chatId);
-
-    // Start watching for frames
     startFrameWatcher(chatId, socket);
-
-    // Send initial video info
-    socket.emit("video-info", {
-      totalFrames: 0, // This will be updated as frames are added
-      fps: FPS,
-    });
   });
 
-  // Handle client leaving a chat room
   socket.on("leave_chat", (chatId) => {
-    console.log(`Client ${socket.id} left chat: ${chatId}`);
+    console.log(`[Socket.IO] ${socket.id} left chat: ${chatId}`);
     socket.leave(chatId);
-
-    // If no more clients in the room, stop watching
-    const room = io.sockets.adapter.rooms.get(chatId);
-    if (!room || room.size === 0) {
+    if (!(io.sockets.adapter.rooms.get(chatId)?.size > 0)) {
       stopFrameWatcher(chatId);
     }
   });
 
-  // Handle client disconnect
   socket.on("disconnect", () => {
-    console.log("Client disconnected:", socket.id);
-
-    // Stop any watchers this client might have started
-    // This requires tracking which chats this socket was connected to
-    // For simplicity, we'll leave this to be implemented in a more robust way
+    console.log(`[Socket.IO] Client disconnected: ${socket.id}`);
+    // Optionally track socket-chatId map and clean up
   });
 });
+
 
 // Start the server
 server.listen(PORT, () => {
