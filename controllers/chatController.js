@@ -15,95 +15,163 @@ exports.startChat = async (userId) => {
 // Function to handle speech input (either text or audio)
 exports.processSpeechOutput = async (req, res) => {
   try {
-    console.log("Request Body:", req.body);
-    console.log("Request Files:", req.files);
+    console.log("[processSpeechOutput] Request Body:", req.body);
+    console.log("[processSpeechOutput] Request Files:", req.files);
 
-    let textInput;
     const {
       input,
       lang = "en",
       chatId,
       options = {},
-      character = "Abonga",
+      character
     } = req.body;
+
+    if (!chatId) throw new Error("chatId is required to stream frames");
+
+    const fs = require("fs");
+    const path = require("path");
+    const { exec } = require("child_process");
+    const util = require("util");
+    const execPromise = util.promisify(exec);
+    const framesDir = path.join(__dirname, "../generator/frames");
+
+
 
     let voiceId = determineVoiceId(character, lang);
 
-    console.log("the chat id now connected :", chatId);
-
-    // Check if input is provided
     if (!input && !req.files) {
       throw new Error("Input field is missing from the request body.");
     }
 
-    // Step 1: Determine if input is text or audio
-    textInput = await determineTheInputType(req, input, lang);
+    // 1. Determine input type (text or audio)
+    const textInput = await determineTheInputType(req, input, lang);
+    console.log("[processSpeechOutput] Input processed as:", textInput);
 
-    // Step 2: Pass text input to LLM (GPT-4)
-    console.log("Sending input to LLM...");
+    // 2. Pass to LLM
     const llmResponse = await LLM.LLM(textInput);
-    console.log("Got LLM response:", llmResponse);
+    console.log("[processSpeechOutput] LLM Response:", llmResponse);
 
-    // 3: Save the Chat into database
-    await saveChatInDataBase(
-      req,
-      chatId,
-      input,
-      llmResponse,
-      voiceId,
-      character
-    );
+    // 3. Save to DB
+    await saveChatInDataBase(req, chatId, input, llmResponse, voiceId, character);
 
-    // Step 4: Convert LLM response to speech (TTS)
-    let audioBase64 = await convertLLMToAudio(llmResponse, voiceId, options);
+    // 4. Convert to Audio
+    const audioBase64 = await convertLLMToAudio(llmResponse, voiceId, options);
 
-    // Step 5: Generate new frames by first clearing old frames and then running the generator
-    const fs = require("fs");
-    const path = require("path");
-    const { exec } = require("child_process");
-    const framesDir = path.join(__dirname, "../generator/frames");
-
-    // Clear existing frames
-    console.log("Clearing existing frames...");
-    try {
-      const files = fs.readdirSync(framesDir);
-      for (const file of files) {
-        if (file.endsWith(".png")) {
-          fs.unlinkSync(path.join(framesDir, file));
-        }
-      }
-      console.log("Frames directory cleared successfully");
-    } catch (error) {
-      console.error("Error clearing frames directory:", error);
-    }
-
-    // Run the frame generator script
-    console.log("Starting frame generator script...");
-    exec("node ./generator/generateFrames.js", (error, stdout, stderr) => {
-      if (error) {
-        console.error(`Error executing frame generator: ${error.message}`);
-        return;
-      }
-      if (stderr) {
-        console.error(`Frame generator stderr: ${stderr}`);
-        return;
-      }
-      console.log(`Frame generator output: ${stdout}`);
+    // IMPORTANT: Send the response immediately to the client with text and audio
+    // This allows the client to display text and play audio while frames are generating
+    res.json({
+      textResponce: llmResponse,
+      ...(audioBase64 ? { audio: audioBase64 } : {}),
     });
 
-    // Step 6: Return the LLM response and audio if available
-    if (audioBase64) {
-      console.log("Returning response with both text and voice");
-      res.json({ textResponce: llmResponse, audio: audioBase64 });
-    } else {
-      console.log("Returning response with text only");
-      res.json({ textResponce: llmResponse });
-    }
+    // Continue with frame generation in the background after sending response
+    (async () => {
+      try {
+        // 5. Clear frames
+        console.log("[processSpeechOutput] Clearing old frames in:", framesDir);
+        const files = fs.readdirSync(framesDir);
+        for (const file of files) {
+          if (file.endsWith(".png")) {
+            fs.unlinkSync(path.join(framesDir, file));
+          }
+        }
+
+        // Get the most recently generated MP3 file
+        const mp3FilePath = await getMostRecentFile('output', '.mp3');
+        if (!mp3FilePath) {
+          console.error("[processSpeechOutput] No MP3 file found in output directory");
+          return;
+        }
+        console.log(`[processSpeechOutput] Found MP3 file: ${mp3FilePath}`);
+
+        // Convert MP3 to WAV
+        const wavFileName = path.basename(mp3FilePath, '.mp3') + '.wav';
+        const wavFilePath = path.join('output', wavFileName);
+        
+        console.log(`[processSpeechOutput] Converting MP3 to WAV: ${wavFilePath}`);
+        await execPromise(`ffmpeg -y -i "${mp3FilePath}" -acodec pcm_s16le -ar 16000 -ac 1 "${wavFilePath}"`);
+        console.log(`[processSpeechOutput] Conversion complete: ${wavFilePath}`);
+
+        // 6. Run Python Script with the converted WAV file (Obama)
+        let pythonCommand;
+        if(character == "Abonga"){
+        pythonCommand = `python /home/humanoid/TalkingGaussian/scripts/infer.py Obama English 1 "/home/humanoid/HumanoidApp/${wavFilePath}" "${framesDir}"`;
+        }
+        else{
+          pythonCommand = `python /home/humanoid/TalkingGaussian/scripts/infer.py May English 1 "/home/humanoid/HumanoidApp/${wavFilePath}" "${framesDir}"`;
+        }
+        
+        console.log("[processSpeechOutput] Running Python command:", pythonCommand);
+        
+        try {
+          const { stdout, stderr } = await execPromise(pythonCommand);
+          if (stderr) {
+            console.error("[processSpeechOutput] Python stderr:", stderr);
+          }
+          console.log("[processSpeechOutput] Python stdout:", stdout);
+        } catch (error) {
+          console.error("[processSpeechOutput] Python execution error:", error);
+        }
+
+        // Check generated frames for debugging
+        const generatedFrames = fs.readdirSync(framesDir).filter(f => f.endsWith('.png'));
+        console.log(`[processSpeechOutput] Generated ${generatedFrames.length} frames`);
+      } catch (error) {
+        console.error("[processSpeechOutput] Background processing error:", error.message);
+      }
+    })();
+    
   } catch (error) {
-    console.error("Error processing speech input:", error.message);
+    console.error("[processSpeechOutput] Error:", error.message);
     res.status(500).json({ error: error.message });
   }
 };
+
+// Helper function to get the most recent file with a specific extension
+async function getMostRecentFile(directory, extension) {
+  const fs = require('fs');
+  const path = require('path');
+  
+  return new Promise((resolve, reject) => {
+    fs.readdir(directory, (err, files) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+      
+      // Filter files by extension
+      const filteredFiles = files.filter(file => file.endsWith(extension));
+      
+      if (filteredFiles.length === 0) {
+        resolve(null);
+        return;
+      }
+      
+      // Get file stats to determine the most recent one
+      let mostRecentFile = null;
+      let mostRecentTime = 0;
+      
+      let processed = 0;
+      filteredFiles.forEach(file => {
+        const filePath = path.join(directory, file);
+        fs.stat(filePath, (err, stats) => {
+          processed++;
+          
+          if (!err && stats.isFile()) {
+            if (stats.mtimeMs > mostRecentTime) {
+              mostRecentTime = stats.mtimeMs;
+              mostRecentFile = filePath;
+            }
+          }
+          
+          if (processed === filteredFiles.length) {
+            resolve(mostRecentFile);
+          }
+        });
+      });
+    });
+  });
+}
 
 exports.NewChat = async (req, res) => {
   try {
@@ -312,7 +380,7 @@ const determineVoiceId = function (charc, lang) {
         },
         Adam: {
           description: "American Deep Middle aged Male Narration",
-          id: "pNInz6obpgDQGcFmaJgB",
+          id: "nPczCjzI2devNBz1zQrb",
         },
       },
       pro: {},
