@@ -19,7 +19,7 @@ Project "Humanoid" introduces an innovative web-based audio-visual chatbot desig
 This video demonstrates the Humanoid chatbot in action:
 
 [//]: # (Local video path for project demonstration)
-![Humanoid Chatbot Demo](/public/Chat/images/Demo%20(1).mp4)
+[![Watch the Demo Video](https://img.youtube.com/vi/bcAwSazS6qY/0.jpg)](https://youtu.be/bcAwSazS6qY)
 *Note: During the demonstration, you might observe occasional lag in the video stream. This occurs because the display speed of frames to the user can sometimes outpace the real-time generation of frames by the Frame Generator, causing the website to momentarily wait for new frames to be produced and sent to the client.*
 
 ## Technical Overview
@@ -72,7 +72,7 @@ To set up and run the project locally, follow these steps:
     *(Follow the installation instructions provided in the TalkingGaussian repository.)*
 
 2.  **Clone this Project:**
-    `git clone [YOUR_PROJECT_REPOSITORY_URL]`
+    `git clone https://github.com/Ahmed-Aboalasaad/Humanoid.git`
 
 3.  **Install Dependencies:**
     Navigate to the project directory and install the necessary Node.js dependencies:
