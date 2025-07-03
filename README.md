@@ -19,9 +19,9 @@ Project "Humanoid" introduces an innovative web-based audio-visual chatbot desig
 This video demonstrates the Humanoid chatbot in action:
 
 ![Humanoid Chatbot Demo Image](/public/Chat/images/DemoImage.png)
-[//]: # (Local video path for project demonstration)
 
-Watch the Demo Video: https://youtu.be/bcAwSazS6qY
+Watch the Demo Video: https://youtu.be/bcAwSazS6qY 
+
 *Note: During the demonstration, you might observe occasional lag in the video stream. This occurs because the display speed of frames to the user can sometimes outpace the real-time generation of frames by the Frame Generator, causing the website to momentarily wait for new frames to be produced and sent to the client.*
 
 ## Technical Overview
